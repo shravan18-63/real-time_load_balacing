@@ -85,15 +85,35 @@ def get_run(owner_id, simulation_id):
 
 @simulation_bp.post("/<simulation_id>/<action>")
 @authenticated_simulation_route
+
 def control(owner_id, simulation_id, action):
-    data = read_json_body() if action == "advance" else None
+    if action == "advance":
+        raise SimulationServiceError(
+            "Simulation time now advances automatically.",
+            status_code=409,
+        )
 
     simulation = control_simulation_for_user(
         owner_id,
         simulation_id,
         action,
-        data,
     )
+
+    try:
+        current_app.extensions["simulation_namespace"].publish(
+            owner_id,
+            simulation,
+        )
+    except Exception:
+        current_app.logger.exception(
+            "Simulation saved, but socket delivery failed."
+        )
+
+    if simulation["status"] == "RUNNING":
+        current_app.extensions["simulation_runner"].ensure_running(
+            owner_id,
+            simulation["id"],
+        )
 
     return jsonify({"simulation": simulation}), (
         201 if action == "reset" else 200

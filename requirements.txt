@@ -3,3 +3,5 @@ Flask-CORS
 Flask-JWT-Extended
 PyMongo
 Werkzeug
+Flask-SocketIO>=5.5,<6
+simple-websocket>=1,<2

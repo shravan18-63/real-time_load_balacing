@@ -106,3 +106,13 @@ def save_simulation_command(owner_id, simulation_id, revision, state, command):
         },
         return_document=ReturnDocument.AFTER,
     )
+def list_active_simulation_ids():
+    documents = get_simulations_collection().find(
+        {"snapshot.status": {"$in": ["RUNNING", "PAUSED"]}},
+        {"_id": 1, "owner_id": 1},
+    )
+
+    return [
+        (str(document["owner_id"]), str(document["_id"]))
+        for document in documents
+    ]
